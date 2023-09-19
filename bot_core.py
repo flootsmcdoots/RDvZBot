@@ -3,16 +3,6 @@ from discord.ext.commands import Bot
 import response_handler
 
 
-async def handle_message(message, user_message, private_message):
-    try:
-        response = response_handler.handle_response(user_message)
-        if response:
-            #  If the message is not empty
-            await message.author.send(response) if private_message else await message.channel.send(response)
-    except Exception as e:
-        print(e)
-
-
 def run_bot_core(bot_config):
     bot_token = bot_config['token']
 
@@ -26,6 +16,8 @@ def run_bot_core(bot_config):
         intents=bot_intents,
         help_command=None,
     )
+
+    bot_response_handler = response_handler.BotResponseHandler(bot_config['host'], bot_config['port'])
 
     @bot.event
     async def on_ready():
@@ -43,7 +35,17 @@ def run_bot_core(bot_config):
         print(f'{username} said \"{message_contents}\" in ({channel})')
 
         #  private_message is currently unused
-        await handle_message(message, message_contents, False)
+        await handle_message(bot_response_handler, message, message_contents, False)
 
     bot.run(token=bot_token)
 
+
+async def handle_message(bot_response_handler: response_handler.BotResponseHandler, message, user_message,
+                         private_message):
+    try:
+        response = bot_response_handler.handle_response(user_message)
+        if response:
+            #  If the message is not empty
+            await message.author.send(response) if private_message else await message.channel.send(response)
+    except Exception as e:
+        print(e)
