@@ -1,0 +1,8 @@
+token:
+  # The bot token
+host:
+  # Host of the Minecraft Server to retrieve data from
+port:
+  # Port of the Minecraft server to retrieve data from
+update_channel_id:
+  # Channel id where to send server update messages

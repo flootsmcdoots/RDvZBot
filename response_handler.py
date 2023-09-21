@@ -1,4 +1,7 @@
 import random
+from datetime import datetime
+
+import discord
 from mcstatus import JavaServer
 from mcstatus.status_response import JavaStatusResponse
 
@@ -57,3 +60,28 @@ class BotResponseHandler:
             return "The only top 500 NF player is Hatsune Miku (and maybe LadyLunch)"
 
         return ""
+
+    def get_periodic_update(self, channel: discord.TextChannel) -> discord.Embed:
+        nf_server = JavaServer.lookup(self.hostaddress)
+        status = nf_server.status()
+        server_version = status.version.name
+        motd_lowercase = status.motd.to_plain().lower()
+        player_list = status.players
+        color = 0xFFFFFF
+        if "starting soon" in motd_lowercase:
+            color = 0x7a7979
+        elif "fallen" in motd_lowercase:
+            color = 0x0a0a0a
+        elif "build phase" in motd_lowercase:
+            color = 0x08c40e
+        elif "shrine" in motd_lowercase:
+            color = 0x920be0
+
+        embed = discord.Embed(title=f"Nightfall - {server_version}", color=color, description=status.motd.to_plain())
+        embed.set_author(name="Nightfall Bot")
+        embed.set_thumbnail(url=channel.guild.icon.url)
+        update_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+        embed.set_footer(text=f"Updated on {update_time}. Updates every minute.")
+        embed.add_field(name="Players Online", value=f"{player_list.online}/{player_list.max}")
+
+        return embed

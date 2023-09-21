@@ -1,7 +1,10 @@
 import discord
+from discord.ext import tasks
 from discord.ext.commands import Bot
 import response_handler
 
+
+#  With thanks to https://github.com/kkrypt0nn/Python-Discord-Bot-Template/ for code guidance
 
 def run_bot_core(bot_config):
     bot_token = bot_config['token']
@@ -10,6 +13,9 @@ def run_bot_core(bot_config):
     bot_intents.message_content = True
     bot_intents.messages = True
     bot_intents.dm_messages = True
+    bot_intents.guilds = True
+
+    bot_updates_channel_id = bot_config['update_channel_id']
 
     bot = Bot(
         command_prefix='/',
@@ -22,20 +28,27 @@ def run_bot_core(bot_config):
     @bot.event
     async def on_ready():
         print(f'{bot.user.name} is active!')
+        update_channel = bot.get_channel(int(bot_updates_channel_id))
+        list_server_status.start(update_channel=update_channel)
+        print("Started periodic update!")
 
     @bot.event
     async def on_message(message: discord.Message) -> None:
         if message.author == bot.user or message.author.bot:
             return  # Don't respond to self or other bots
 
-        username = str(message.author)
         message_contents = str(message.content)
-        channel = str(message.channel)
-
-        print(f'{username} said \"{message_contents}\" in ({channel})')
+        print()
 
         #  private_message is currently unused
         await handle_message(bot_response_handler, message, message_contents, False)
+
+    @tasks.loop(minutes=1.0)
+    async def list_server_status(update_channel: discord.TextChannel) -> None:
+        if update_channel:  # If not none, run other code
+            await update_channel.send(embed=bot_response_handler.get_periodic_update(channel=update_channel))
+        else:
+            print("Failed to find update channel! (Wrong or missing id?)")
 
     bot.run(token=bot_token)
 
