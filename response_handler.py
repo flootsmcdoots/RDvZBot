@@ -33,8 +33,9 @@ def parse_server_players(status: JavaStatusResponse) -> str:
 
 
 class BotResponseHandler:
-    def __init__(self, host, port):
+    def __init__(self, host, port, update_frequency):
         self.hostaddress = "{host}:{port}".format(host=host, port=port)
+        self.update_frequency = update_frequency
 
     def handle_response(self, message: str) -> str:
         processed_message = message.lower()
@@ -81,7 +82,7 @@ class BotResponseHandler:
         embed.set_author(name="Nightfall Bot")
         embed.set_thumbnail(url=channel.guild.icon.url)
         update_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-        embed.set_footer(text=f"Updated on {update_time}. Updates every minute.")
+        embed.set_footer(text=f"Updated on {update_time}. Updates {self.update_frequency} minute(s).")
         embed.add_field(name="Players Online", value=f"{player_list.online}/{player_list.max}")
 
         return embed

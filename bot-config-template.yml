@@ -1,8 +1,10 @@
 token:
-  # The bot token
+  # The bot token (string)
 host:
-  # Host of the Minecraft Server to retrieve data from
+  # Host of the Minecraft Server to retrieve data from (string)
 port:
-  # Port of the Minecraft server to retrieve data from
+  # Port of the Minecraft server to retrieve data from (int)
 update_channel_id:
-  # Channel id where to send server update messages
+  # Channel id where to send server update messages (int)
+update_frequency:
+  # Number of minutes in between server update messages (float, minimum of 0.1 minutes, so you don't spam the API with a bad configuration)

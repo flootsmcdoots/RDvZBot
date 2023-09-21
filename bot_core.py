@@ -16,6 +16,10 @@ def run_bot_core(bot_config):
     bot_intents.guilds = True
 
     bot_updates_channel_id = bot_config['update_channel_id']
+    update_frequency = float(bot_config['update_frequency'])
+    if update_frequency < 0.1:
+        print("Update Frequency is too low (below 0.1)! Setting to 0.1...")
+        update_frequency = 0.1
 
     bot = Bot(
         command_prefix='/',
@@ -23,14 +27,15 @@ def run_bot_core(bot_config):
         help_command=None,
     )
 
-    bot_response_handler = response_handler.BotResponseHandler(bot_config['host'], bot_config['port'])
+    bot_response_handler = response_handler.BotResponseHandler(bot_config['host'], bot_config['port'],
+                                                               update_frequency=update_frequency)
 
     @bot.event
     async def on_ready():
         print(f'{bot.user.name} is active!')
         update_channel = bot.get_channel(int(bot_updates_channel_id))
         list_server_status.start(update_channel=update_channel)
-        print("Started periodic update!")
+        print(f"Started periodic update with frequency of {update_frequency} minutes!")
 
     @bot.event
     async def on_message(message: discord.Message) -> None:
@@ -43,7 +48,7 @@ def run_bot_core(bot_config):
         #  private_message is currently unused
         await handle_message(bot_response_handler, message, message_contents, False)
 
-    @tasks.loop(minutes=1.0)
+    @tasks.loop(minutes=update_frequency)
     async def list_server_status(update_channel: discord.TextChannel) -> None:
         if update_channel:  # If not none, run other code
             await update_channel.send(embed=bot_response_handler.get_periodic_update(channel=update_channel))
