@@ -8,3 +8,9 @@ update_channel_id:
   # Channel id where to send server update messages (int)
 update_frequency:
   # Number of minutes in between server update messages (float, minimum of 0.1 minutes, so you don't spam the API with a bad configuration)
+embed-colors:
+  # Pairs of keyword - color objects that determine what color the embed has when a particular phrase (the keyword) is found
+  # Example in format:
+  # - color: 0xFFFFFF
+  #   keyword: "starting"
+  # Color is in hex representation, 

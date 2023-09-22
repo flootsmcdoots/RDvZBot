@@ -26,9 +26,10 @@ def run_bot_core(bot_config):
         intents=bot_intents,
         help_command=None,
     )
-
+    # TODO: Input validation on config (like embed colors should be in the form of color/keyword objects)
     bot_response_handler = response_handler.BotResponseHandler(bot_config['host'], bot_config['port'],
-                                                               update_frequency=update_frequency)
+                                                               update_frequency=update_frequency,
+                                                               embed_color_list=bot_config['embed-colors'])
 
     @bot.event
     async def on_ready():

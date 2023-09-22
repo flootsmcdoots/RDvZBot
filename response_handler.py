@@ -33,9 +33,10 @@ def parse_server_players(status: JavaStatusResponse) -> str:
 
 
 class BotResponseHandler:
-    def __init__(self, host, port, update_frequency):
+    def __init__(self, host, port, update_frequency, embed_color_list):
         self.hostaddress = "{host}:{port}".format(host=host, port=port)
         self.update_frequency = update_frequency
+        self.embed_color_list = embed_color_list
 
     def handle_response(self, message: str) -> str:
         processed_message = message.lower()
@@ -69,14 +70,11 @@ class BotResponseHandler:
         motd_lowercase = status.motd.to_plain().lower()
         player_list = status.players
         color = 0xFFFFFF
-        if "starting soon" in motd_lowercase:
-            color = 0x7a7979
-        elif "fallen" in motd_lowercase:
-            color = 0x0a0a0a
-        elif "build phase" in motd_lowercase:
-            color = 0x08c40e
-        elif "shrine" in motd_lowercase:
-            color = 0x920be0
+        for embed_color_obj in self.embed_color_list:
+            if ('keyword' in embed_color_obj and "color" in embed_color_obj
+                    and embed_color_obj["keyword"] in motd_lowercase):
+                color = embed_color_obj["color"]
+                break
 
         embed = discord.Embed(title=f"Nightfall - {server_version}", color=color, description=status.motd.to_plain())
         embed.set_author(name="Nightfall Bot")
