@@ -32,36 +32,15 @@ def parse_server_players(status: JavaStatusResponse) -> str:
     return ret_val
 
 
-class BotResponseHandler:
+def handle_info() -> str:
+    return "Code: https://github.com/GreatWyrm/NightfallBot"
+
+
+class ServerUpdateChecker:
     def __init__(self, host, port, update_frequency, embed_color_list):
         self.hostaddress = "{host}:{port}".format(host=host, port=port)
         self.update_frequency = update_frequency
         self.embed_color_list = embed_color_list
-
-    def handle_response(self, message: str) -> str:
-        processed_message = message.lower()
-
-        if processed_message == 'hello':
-            return "Hello World!"
-
-        if processed_message == 'roll':
-            return str(random.randint(1, 6))
-
-        if processed_message == 'info':
-            return "Code: https://github.com/GreatWyrm/NightfallBot"
-
-        if processed_message == 'status':
-            nf_server = JavaServer.lookup(self.hostaddress)
-            return parse_server_status(nf_server.status())
-
-        if processed_message == 'players':
-            nf_server = JavaServer.lookup(self.hostaddress)
-            return parse_server_players(nf_server.status())
-
-        if processed_message == 'top 500':
-            return "The only top 500 NF player is Hatsune Miku (and maybe LadyLunch)"
-
-        return ""
 
     def get_periodic_update(self, channel: discord.TextChannel) -> discord.Embed:
         nf_server = JavaServer.lookup(self.hostaddress)

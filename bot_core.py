@@ -1,7 +1,8 @@
 import discord
-from discord.ext import tasks
+from discord.ext import tasks, commands
 from discord.ext.commands import Bot
-import response_handler
+
+import command_handler
 
 
 #  With thanks to https://github.com/kkrypt0nn/Python-Discord-Bot-Template/ for code guidance
@@ -22,12 +23,12 @@ def run_bot_core(bot_config):
         update_frequency = 0.1
 
     bot = Bot(
-        command_prefix='/',
+        command_prefix="!",
         intents=bot_intents,
-        help_command=None,
+        help_command=commands.DefaultHelpCommand(),
     )
     # TODO: Input validation on config (like embed colors should be in the form of color/keyword objects)
-    bot_response_handler = response_handler.BotResponseHandler(bot_config['host'], bot_config['port'],
+    bot_response_handler = command_handler.ServerUpdateChecker(bot_config['host'], bot_config['port'],
                                                                update_frequency=update_frequency,
                                                                embed_color_list=bot_config['embed-colors'])
 
@@ -43,11 +44,7 @@ def run_bot_core(bot_config):
         if message.author == bot.user or message.author.bot:
             return  # Don't respond to self or other bots
 
-        message_contents = str(message.content)
-        print()
-
-        #  private_message is currently unused
-        await handle_message(bot_response_handler, message, message_contents, False)
+        await bot.process_commands(message)
 
     @tasks.loop(minutes=update_frequency)
     async def list_server_status(update_channel: discord.TextChannel) -> None:
@@ -64,10 +61,15 @@ def run_bot_core(bot_config):
         else:
             print("Failed to find update channel! (Wrong or missing id?)")
 
+    @bot.command()
+    @commands.cooldown(1, 10, commands.BucketType.guild)
+    async def info(ctx):
+        await ctx.send(command_handler.handle_info())
+
     bot.run(token=bot_token)
 
 
-async def handle_message(bot_response_handler: response_handler.BotResponseHandler, message, user_message,
+async def handle_message(bot_response_handler: command_handler.ServerUpdateChecker, message, user_message,
                          private_message):
     try:
         response = bot_response_handler.handle_response(user_message)
