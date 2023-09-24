@@ -33,7 +33,7 @@ def parse_server_players(status: JavaStatusResponse) -> str:
 
 
 def handle_info() -> str:
-    return "Code: https://github.com/GreatWyrm/NightfallBot"
+    return "Code: https://github.com/GreatWyrm/NightfallBot\nProfile Picture made by Skylarr"
 
 
 class ServerUpdateChecker:

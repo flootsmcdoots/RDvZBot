@@ -61,20 +61,10 @@ def run_bot_core(bot_config):
         else:
             print("Failed to find update channel! (Wrong or missing id?)")
 
-    @bot.command()
+    @bot.command(brief="Displays info about the bot", description="Displays the source code of the bot and who made "
+                                                                  "the profile picture")
     @commands.cooldown(1, 10, commands.BucketType.guild)
     async def info(ctx):
         await ctx.send(command_handler.handle_info())
 
     bot.run(token=bot_token)
-
-
-async def handle_message(bot_response_handler: command_handler.ServerUpdateChecker, message, user_message,
-                         private_message):
-    try:
-        response = bot_response_handler.handle_response(user_message)
-        if response:
-            #  If the message is not empty
-            await message.author.send(response) if private_message else await message.channel.send(response)
-    except Exception as e:
-        print(e)
