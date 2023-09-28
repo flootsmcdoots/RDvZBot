@@ -18,6 +18,10 @@ def run_bot_core(bot_config):
 
     bot_updates_channel_id = bot_config['update_channel_id']
     update_frequency = float(bot_config['update_frequency'])
+    role_id = int(bot_config['ping-role-id'])
+    # TODO Input validation here so the math doesn't bug out
+    role_ping_cooldown_seconds = int(bot_config['ping-cooldown-seconds'])
+    role_ping_manual_cooldown_seconds = int(bot_config['manual-cooldown-seconds'])
     if update_frequency < 0.1:
         print("Update Frequency is too low (below 0.1)! Setting to 0.1...")
         update_frequency = 0.1
@@ -31,6 +35,7 @@ def run_bot_core(bot_config):
     bot_response_handler = command_handler.ServerUpdateChecker(bot_config['host'], bot_config['port'],
                                                                update_frequency=update_frequency,
                                                                embed_color_list=bot_config['embed-colors'])
+    gamewatch_pinger = command_handler.GamewatchPinger(role_id=role_id, ping_cooldown=role_ping_cooldown_seconds, manual_cooldown=role_ping_manual_cooldown_seconds)
 
     @bot.event
     async def on_ready():
@@ -64,7 +69,21 @@ def run_bot_core(bot_config):
     @bot.command(brief="Displays info about the bot", description="Displays the source code of the bot and who made "
                                                                   "the profile picture")
     @commands.cooldown(1, 10, commands.BucketType.guild)
-    async def info(ctx):
+    async def info(ctx: commands.Context):
         await ctx.send(command_handler.handle_info())
+
+    @bot.command()
+    @commands.cooldown(1, 3, commands.BucketType.guild)
+    async def gamewatch(ctx: commands.Context):
+        if gamewatch_pinger.can_ping_gamewatch(ctx.message.created_at):
+            await gamewatch_pinger.send_gamewatch_ping(ctx)
+        else:
+            # Print when you can ping gamewatch again
+            await gamewatch_pinger.send_gamewatch_on_cooldown(ctx)
+
+    @bot.command()
+    @commands.cooldown(1, 3, commands.BucketType.guild)
+    async def gamewatch_cooldown(ctx: commands.Context):
+        await gamewatch_pinger.start_gamewatch_cooldown(ctx)
 
     bot.run(token=bot_token)

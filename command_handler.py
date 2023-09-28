@@ -1,7 +1,8 @@
-import random
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import discord
+import pytz
+from discord.ext import commands
 from mcstatus import JavaServer
 from mcstatus.status_response import JavaStatusResponse
 
@@ -63,3 +64,38 @@ class ServerUpdateChecker:
         embed.add_field(name="Players Online", value=f"{player_list.online}/{player_list.max}")
 
         return embed
+
+
+class GamewatchPinger:
+    def __init__(self, role_id: int, ping_cooldown: int, manual_cooldown: int):
+        self.last_gamewatch_ping = datetime.now(timezone.utc) - timedelta(hours=1)
+        self.role_id = role_id
+        # In seconds
+        self.ping_cooldown = ping_cooldown
+        # In seconds
+        self.manual_cooldown = manual_cooldown
+
+    def can_ping_gamewatch(self, created_at: datetime):
+        delta = created_at - (self.last_gamewatch_ping + timedelta(seconds=self.ping_cooldown))
+        return delta.total_seconds() > 0
+
+    async def send_gamewatch_ping(self, ctx: commands.Context):
+        role = ctx.guild.get_role(self.role_id)
+        if role:
+            await ctx.channel.send(f"{ctx.author.name} has pinged Gamewatch, {role.mention}")
+            self.last_gamewatch_ping = datetime.now(timezone.utc)
+        else:
+            await ctx.channel.send("Gamewatch was pinged, but bot failed to find role!")
+
+    async def send_gamewatch_on_cooldown(self, ctx: commands.Context):
+        delta = (self.last_gamewatch_ping + timedelta(seconds=self.ping_cooldown)) - ctx.message.created_at
+        # Cooldown: message created at - (last_ping_time + ping cooldown time) gives seconds until next ping
+        await ctx.channel.send(f"Gamewatch is on cooldown! You can ping again in {round(delta.total_seconds())} seconds.")
+
+    async def start_gamewatch_cooldown(self, ctx: commands.Context):
+        # Set last gamewatch ping to now, plus the delta we want to supress, minus the delta of the standard ping
+        # cooldown to get things to line up
+        self.last_gamewatch_ping = datetime.now(timezone.utc) + timedelta(seconds=self.manual_cooldown) - timedelta(seconds=self.ping_cooldown)
+        available_time = self.last_gamewatch_ping.strftime("%m/%d/%Y, %H:%M:%S")
+        await ctx.channel.send(f"{ctx.author.name} has put Gamewatch on cooldown for {self.manual_cooldown} seconds. "
+                               f"Next ping time is {available_time} UTC.")
