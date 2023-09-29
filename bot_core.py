@@ -1,6 +1,7 @@
 import discord
 from discord.ext import tasks, commands
 from discord.ext.commands import Bot
+from discord.ext.commands import has_permissions
 
 import command_handler
 
@@ -67,12 +68,12 @@ def run_bot_core(bot_config):
             print("Failed to find update channel! (Wrong or missing id?)")
 
     @bot.command(brief="Displays info about the bot", description="Displays the source code of the bot and who made "
-                                                                  "the profile picture")
+                                                                  "the profile picture.")
     @commands.cooldown(1, 10, commands.BucketType.guild)
     async def info(ctx: commands.Context):
         await ctx.send(command_handler.handle_info())
 
-    @bot.command()
+    @bot.command(brief="Pings Gamewatch", description="Tries to ping gamewatch, if it is off cooldown.")
     @commands.cooldown(1, 3, commands.BucketType.guild)
     async def gamewatch(ctx: commands.Context):
         if gamewatch_pinger.can_ping_gamewatch(ctx.message.created_at):
@@ -81,7 +82,11 @@ def run_bot_core(bot_config):
             # Print when you can ping gamewatch again
             await gamewatch_pinger.send_gamewatch_on_cooldown(ctx)
 
-    @bot.command()
+    @bot.command(brief="Puts the Gamewatch ping on cooldown. Admin Only.", description="Puts the Gamewatch ping on a "
+                                                                                       "predetermined cooldown, "
+                                                                                       "requires the 'Manage Messages "
+                                                                                       "permission to use.")
+    @has_permissions(manage_messages=True)
     @commands.cooldown(1, 3, commands.BucketType.guild)
     async def gamewatch_cooldown(ctx: commands.Context):
         await gamewatch_pinger.start_gamewatch_cooldown(ctx)
