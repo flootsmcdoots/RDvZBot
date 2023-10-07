@@ -57,9 +57,10 @@ def run_bot_core(bot_config):
         if update_channel:  # If not none, run other code
             # Retrieve last message, if it's written by this bot, and it's an embed, let's edit it
             last_message_id = update_channel.last_message_id
-            last_message: discord.Message = await update_channel.fetch_message(last_message_id)
-            if last_message.author == bot.user and last_message.embeds:
-                await last_message.edit(embed=bot_response_handler.get_periodic_update(update_channel))
+            if last_message_id:
+                last_message: discord.Message = await update_channel.fetch_message(last_message_id)
+                if last_message.author == bot.user and last_message.embeds:
+                    await last_message.edit(embed=bot_response_handler.get_periodic_update(update_channel))
             else:
                 # Otherwise send a new message
                 await update_channel.send(embed=bot_response_handler.get_periodic_update(channel=update_channel))

@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
 import discord
-import pytz
 from discord.ext import commands
 from mcstatus import JavaServer
 from mcstatus.status_response import JavaStatusResponse

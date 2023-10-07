@@ -4,7 +4,7 @@ import os.path
 
 if __name__ == '__main__':
     # Execute bot
-    path = './bot-config.yml'
+    path = 'bot-config.yml'
     if os.path.isfile(path):
         with open(path, 'r') as file:
             config = yaml.safe_load(file)
