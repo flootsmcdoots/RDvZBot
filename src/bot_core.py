@@ -53,7 +53,7 @@ def run_bot_core(bot_config):
         await bot.process_commands(message)
 
     @tasks.loop(minutes=update_frequency)
-    async def list_server_status(update_channel: discord.TextChannel) -> None:
+    async def list_server_status(self, update_channel: discord.TextChannel) -> None:
         if update_channel:  # If not none, run other code
             # Retrieve last message, if it's written by this bot, and it's an embed, let's edit it
             last_message_id = update_channel.last_message_id
@@ -64,9 +64,9 @@ def run_bot_core(bot_config):
             else:
                 # Otherwise send a new message
                 await update_channel.send(embed=bot_response_handler.get_periodic_update(channel=update_channel))
-                pass
         else:
             print("Failed to find update channel! (Wrong or missing id?)")
+        await self.change_presence(activity=discord.Game(bot_response_handler.get_player_count_string()))
 
     @bot.command(brief="Displays info about the bot", description="Displays the source code of the bot and who made "
                                                                   "the profile picture.")

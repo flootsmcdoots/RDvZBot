@@ -20,18 +20,6 @@ def parse_server_status(status: JavaStatusResponse) -> str:
             f'{motd}')
 
 
-def parse_server_players(status: JavaStatusResponse) -> str:
-    player_list = status.players
-    ret_val = f'Players Online: {player_list.online}/{player_list.max}\n'
-
-    if player_list.sample:  # Is not None
-        for player in player_list.sample:
-            sample_str = "Username: {name}, UUID: {uuid}\n".format(name=player.name, uuid=player.uuid)
-            ret_val = ret_val + sample_str
-
-    return ret_val
-
-
 def handle_info() -> str:
     return "Code: https://github.com/GreatWyrm/NightfallBot\nProfile Picture made by Skylarr"
 
@@ -59,10 +47,16 @@ class ServerUpdateChecker:
         embed.set_author(name="Nightfall Bot")
         embed.set_thumbnail(url=channel.guild.icon.url)
         update_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-        embed.set_footer(text=f"Updated on {update_time}. Updates {self.update_frequency} minute(s).")
+        embed.set_footer(text=f"Updated on {update_time}. Updates every {self.update_frequency} minute(s).")
         embed.add_field(name="Players Online", value=f"{player_list.online}/{player_list.max}")
 
         return embed
+
+    def get_player_count_string(self) -> str:
+        nf_server = JavaServer.lookup(self.hostaddress)
+        status = nf_server.status()
+        player_list = status.players
+        return f'Players Online: {player_list.online}/{player_list.max}'
 
 
 class GamewatchPinger:
@@ -89,12 +83,14 @@ class GamewatchPinger:
     async def send_gamewatch_on_cooldown(self, ctx: commands.Context):
         delta = (self.last_gamewatch_ping + timedelta(seconds=self.ping_cooldown)) - ctx.message.created_at
         # Cooldown: message created at - (last_ping_time + ping cooldown time) gives seconds until next ping
-        await ctx.channel.send(f"Gamewatch is on cooldown! You can ping again in {round(delta.total_seconds())} seconds.")
+        await ctx.channel.send(
+            f"Gamewatch is on cooldown! You can ping again in {round(delta.total_seconds())} seconds.")
 
     async def start_gamewatch_cooldown(self, ctx: commands.Context):
         # Set last gamewatch ping to now, plus the delta we want to supress, minus the delta of the standard ping
         # cooldown to get things to line up
-        self.last_gamewatch_ping = datetime.now(timezone.utc) + timedelta(seconds=self.manual_cooldown) - timedelta(seconds=self.ping_cooldown)
+        self.last_gamewatch_ping = datetime.now(timezone.utc) + timedelta(seconds=self.manual_cooldown) - timedelta(
+            seconds=self.ping_cooldown)
         available_time = self.last_gamewatch_ping.strftime("%m/%d/%Y, %H:%M:%S")
         await ctx.channel.send(f"{ctx.author.name} has put Gamewatch on cooldown for {self.manual_cooldown} seconds. "
                                f"Next ping time is {available_time} UTC.")
