@@ -18,5 +18,7 @@ ping-role-id:
   # Id of role to ping (gamewatch)
 ping-cooldown-seconds:
   # Number of seconds in between valid role pings
+ping-channel:
+  # The channel to restrict pings to
 manual-cooldown-seconds:
   # Number of seconds to put the role ping into cooldown for when running the manual command to force the ping onto cooldown

@@ -18,6 +18,7 @@ def run_bot_core(bot_config):
     bot_intents.guilds = True
 
     bot_updates_channel_id = bot_config['update_channel_id']
+    bot_ping_channel_id = bot_config['ping-channel']
     update_frequency = float(bot_config['update_frequency'])
     role_id = int(bot_config['ping-role-id'])
     # TODO Input validation here so the math doesn't bug out
@@ -54,19 +55,23 @@ def run_bot_core(bot_config):
 
     @tasks.loop(minutes=update_frequency)
     async def list_server_status(update_channel: discord.TextChannel) -> None:
-        if update_channel:  # If not none, run other code
-            # Retrieve last message, if it's written by this bot, and it's an embed, let's edit it
-            last_message_id = update_channel.last_message_id
-            if last_message_id:
-                last_message: discord.Message = await update_channel.fetch_message(last_message_id)
-                if last_message.author == bot.user and last_message.embeds:
-                    await last_message.edit(embed=bot_response_handler.get_periodic_update(update_channel))
+        try:
+            if update_channel:  # If not none, run other code
+                # Retrieve last message, if it's written by this bot, and it's an embed, let's edit it
+                last_message_id = update_channel.last_message_id
+                if last_message_id:
+                    last_message: discord.Message = await update_channel.fetch_message(last_message_id)
+                    if last_message.author == bot.user and last_message.embeds:
+                        await last_message.edit(embed=bot_response_handler.get_periodic_update(update_channel))
+                else:
+                    # Otherwise send a new message
+                    await update_channel.send(embed=bot_response_handler.get_periodic_update(channel=update_channel))
             else:
-                # Otherwise send a new message
-                await update_channel.send(embed=bot_response_handler.get_periodic_update(channel=update_channel))
-        else:
-            print("Failed to find update channel! (Wrong or missing id?)")
-        await bot.change_presence(activity=discord.Game(bot_response_handler.get_player_count_string()))
+                print("Failed to find update channel! (Wrong or missing id?)")
+            await bot.change_presence(activity=discord.Game(bot_response_handler.get_player_count_string()))
+        except (discord.NotFound, discord.Forbidden, discord.HTTPException) as discordError:
+            print(f"Failed to update server status")
+            print(discordError)
 
     @bot.command(brief="Displays info about the bot", description="Displays the source code of the bot and who made "
                                                                   "the profile picture.")
@@ -77,11 +82,28 @@ def run_bot_core(bot_config):
     @bot.command(brief="Pings Gamewatch", description="Tries to ping gamewatch, if it is off cooldown.")
     @commands.cooldown(1, 3, commands.BucketType.guild)
     async def gamewatch(ctx: commands.Context):
-        if gamewatch_pinger.can_ping_gamewatch(ctx.message.created_at):
-            await gamewatch_pinger.send_gamewatch_ping(ctx)
+        # Verify ping channel exists
+        if bot_ping_channel_id > 0:
+            ping_channel = ctx.guild.get_channel(int(bot_ping_channel_id))
+            if not ping_channel:
+                print("Failed to find ping channel! (Wrong or missing id?)")
+                return
+            if ctx.channel.id != ping_channel.id:
+                await ctx.channel.send(f"Cannot ping gamewatch here, must ping in <#{ping_channel.id}>.")
+                return
+            # Verify you pinged in the gamewatch role
+            if gamewatch_pinger.can_ping_gamewatch(ctx.message.created_at):
+                await gamewatch_pinger.send_gamewatch_ping(ctx, ping_channel)
+            else:
+                # Print when you can ping gamewatch again
+                await gamewatch_pinger.send_gamewatch_on_cooldown(ctx)
         else:
-            # Print when you can ping gamewatch again
-            await gamewatch_pinger.send_gamewatch_on_cooldown(ctx)
+            # Verify you pinged in the gamewatch role
+            if gamewatch_pinger.can_ping_gamewatch(ctx.message.created_at):
+                await gamewatch_pinger.send_gamewatch_ping(ctx, ctx.channel)
+            else:
+                # Print when you can ping gamewatch again
+                await gamewatch_pinger.send_gamewatch_on_cooldown(ctx)
 
     @bot.command(brief="Puts the Gamewatch ping on cooldown. Admin Only.", description="Puts the Gamewatch ping on a "
                                                                                        "predetermined cooldown, "
@@ -91,5 +113,13 @@ def run_bot_core(bot_config):
     @commands.cooldown(1, 3, commands.BucketType.guild)
     async def gamewatch_cooldown(ctx: commands.Context):
         await gamewatch_pinger.start_gamewatch_cooldown(ctx)
+
+    @bot.command(brief="Restarts the server status updater task. Admin only.")
+    @has_permissions(manage_messages=True)
+    @commands.cooldown(1, 1, commands.BucketType.guild)
+    async def restart_lister(ctx: commands.Context):
+        update_channel = bot.get_channel(int(bot_updates_channel_id))
+        list_server_status.restart(update_channel=update_channel)
+        await ctx.channel.send("Restarted server updater.")
 
     bot.run(token=bot_token)
