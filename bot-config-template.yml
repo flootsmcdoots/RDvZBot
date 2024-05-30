@@ -22,3 +22,5 @@ ping-channel:
   # The channel to restrict pings to
 manual-cooldown-seconds:
   # Number of seconds to put the role ping into cooldown for when running the manual command to force the ping onto cooldown
+min-players-threshold:
+  # Number of players that must be online before a role ping is allowed

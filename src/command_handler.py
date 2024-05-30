@@ -58,6 +58,11 @@ class ServerUpdateChecker:
         player_list = status.players
         return f'Players Online: {player_list.online}/{player_list.max}'
 
+    def get_player_count(self) -> int:
+        nf_server = JavaServer.lookup(self.hostaddress)
+        status = nf_server.status()
+        return status.players.online
+
 
 class GamewatchPinger:
     def __init__(self, role_id: int, ping_cooldown: int, manual_cooldown: int):
@@ -69,6 +74,8 @@ class GamewatchPinger:
         self.manual_cooldown = manual_cooldown
 
     def can_ping_gamewatch(self, created_at: datetime):
+
+        # Has enough time passed?
         delta = created_at - (self.last_gamewatch_ping + timedelta(seconds=self.ping_cooldown))
         return delta.total_seconds() > 0
 

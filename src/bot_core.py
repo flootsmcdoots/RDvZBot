@@ -24,6 +24,7 @@ def run_bot_core(bot_config):
     # TODO Input validation here so the math doesn't bug out
     role_ping_cooldown_seconds = int(bot_config['ping-cooldown-seconds'])
     role_ping_manual_cooldown_seconds = int(bot_config['manual-cooldown-seconds'])
+    min_players_ping_threshold = int(bot_config['min-players-threshold'])
     if update_frequency < 0.1:
         print("Update Frequency is too low (below 0.1)! Setting to 0.1...")
         update_frequency = 0.1
@@ -41,10 +42,10 @@ def run_bot_core(bot_config):
 
     @bot.event
     async def on_ready():
-        print(f'{bot.user.name} is active!')
+        print(f'{bot.user.name} has started!')
         update_channel = bot.get_channel(int(bot_updates_channel_id))
         list_server_status.start(update_channel=update_channel)
-        print(f"Started periodic update with frequency of {update_frequency} minutes!")
+        print(f"Started periodic update with frequency of {update_frequency} minutes")
 
     @bot.event
     async def on_message(message: discord.Message) -> None:
@@ -90,6 +91,12 @@ def run_bot_core(bot_config):
                 return
             if ctx.channel.id != ping_channel.id:
                 await ctx.channel.send(f"Cannot ping gamewatch here, must ping in <#{ping_channel.id}>.")
+                return
+            # Player count check
+            current_online_count = bot_response_handler.get_player_count()
+            if current_online_count < min_players_ping_threshold:
+                await ctx.channel.send(f"Too few players online to ping! (Need {min_players_ping_threshold} or more "
+                                       f"players, only {current_online_count} player(s) online)")
                 return
             # Verify you pinged in the gamewatch role
             if gamewatch_pinger.can_ping_gamewatch(ctx.message.created_at):
