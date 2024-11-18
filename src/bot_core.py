@@ -4,6 +4,7 @@ from discord.ext.commands import Bot
 from discord.ext.commands import has_permissions
 
 import command_handler
+import dm_handler
 
 
 #  With thanks to https://github.com/kkrypt0nn/Python-Discord-Bot-Template/ for code guidance
@@ -19,6 +20,9 @@ def run_bot_core(bot_config):
 
     bot_updates_channel_id = bot_config['update_channel_id']
     bot_ping_channel_id = bot_config['ping-channel']
+    bot_issues_channel_id = int(bot_config['issue-channel'])
+
+    answerer_role_id = int(bot_config['answerer_role'])
     update_frequency = float(bot_config['update_frequency'])
     role_id = int(bot_config['ping-role-id'])
     # TODO Input validation here so the math doesn't bug out
@@ -39,6 +43,10 @@ def run_bot_core(bot_config):
                                                                update_frequency=update_frequency,
                                                                embed_color_list=bot_config['embed-colors'])
     gamewatch_pinger = command_handler.GamewatchPinger(role_id=role_id, ping_cooldown=role_ping_cooldown_seconds, manual_cooldown=role_ping_manual_cooldown_seconds)
+    bot_issues_channel = bot.get_channel(bot_issues_channel_id)
+    if bot_issues_channel is None:
+        print(f"Failed to find issues channel with {bot_issues_channel_id}")
+
 
     @bot.event
     async def on_ready():
@@ -51,6 +59,11 @@ def run_bot_core(bot_config):
     async def on_message(message: discord.Message) -> None:
         if message.author == bot.user or message.author.bot:
             return  # Don't respond to self or other bots
+
+        # If it's a DM, handle differently
+        if isinstance(message.channel, discord.DMChannel):
+            await dm_handler.handle_dm_message(message.channel, bot_issues_channel, answerer_role_id)
+            return
 
         await bot.process_commands(message)
 
