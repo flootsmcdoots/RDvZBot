@@ -18,19 +18,16 @@ class MenuView(discord.ui.View):
     async def button_callback_open_issue(self, interaction, button: discord.Button):
         await interaction.response.send_modal(
             CreateThreadModal(title="Open Issue", channel=self.issue_channel, should_add_user=True, answer_role_id=self.answer_role_id))
-        await interaction.response.send_message("Issue submitted!")
 
     @discord.ui.button(label="Report Bug", style=discord.ButtonStyle.secondary, emoji="🐛")
     async def button_callback_report_bug(self, interaction, button: discord.Button):
         await interaction.response.send_modal(
             CreateThreadModal(title="Report Bug", channel=self.issue_channel, should_add_user=False, answer_role_id=self.answer_role_id))
-        await interaction.response.send_message("Bug Reported!")
 
     @discord.ui.button(label="Request Unban", style=discord.ButtonStyle.secondary, emoji="🔨")
     async def button_callback_opt2(self, interaction, button: discord.Button):
         await interaction.response.send_modal(
             CreateThreadModal(title="Request Unban", channel=self.issue_channel, should_add_user=True, answer_role_id=self.answer_role_id))
-        await interaction.response.send_message("Ban Appeal Submitted!")
 
 
 class CreateThreadModal(discord.ui.Modal):
@@ -62,3 +59,5 @@ class CreateThreadModal(discord.ui.Modal):
         else:
             await thread.send("Could not find moderators to answer your request! Please notify the server "
                               "administrators about this bug.")
+
+        await interaction.response.send_message("Thread has been successfully created.")

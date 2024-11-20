@@ -17,6 +17,7 @@ def run_bot_core(bot_config):
     bot_intents.messages = True
     bot_intents.dm_messages = True
     bot_intents.guilds = True
+    bot_intents.members = True
 
     bot_updates_channel_id = bot_config['update_channel_id']
     bot_ping_channel_id = bot_config['ping-channel']
@@ -43,9 +44,6 @@ def run_bot_core(bot_config):
                                                                update_frequency=update_frequency,
                                                                embed_color_list=bot_config['embed-colors'])
     gamewatch_pinger = command_handler.GamewatchPinger(role_id=role_id, ping_cooldown=role_ping_cooldown_seconds, manual_cooldown=role_ping_manual_cooldown_seconds)
-    bot_issues_channel = bot.get_channel(bot_issues_channel_id)
-    if bot_issues_channel is None:
-        print(f"Failed to find issues channel with {bot_issues_channel_id}")
 
 
     @bot.event
@@ -60,6 +58,9 @@ def run_bot_core(bot_config):
         if message.author == bot.user or message.author.bot:
             return  # Don't respond to self or other bots
 
+        bot_issues_channel = bot.get_channel(bot_issues_channel_id)
+        if bot_issues_channel is None:
+            print(f"Failed to find issues channel with {bot_issues_channel_id}")
         # If it's a DM, handle differently
         if isinstance(message.channel, discord.DMChannel):
             await dm_handler.handle_dm_message(message.channel, bot_issues_channel, answerer_role_id)
