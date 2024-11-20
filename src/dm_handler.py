@@ -47,7 +47,7 @@ class CreateThreadModal(discord.ui.Modal):
         thread = await self.issue_channel.create_thread(name=short_desc, message=None)
         if long_desc:
             await thread.send(long_desc)
-        if self.add_user:
+        if self.add_user and self.issue_channel.guild.get_member(interaction.user.id) is not None:
             await thread.add_user(interaction.user)
 
         # Add users with specific role
