@@ -79,13 +79,25 @@ class GamewatchPinger:
         delta = created_at - (self.last_gamewatch_ping + timedelta(seconds=self.ping_cooldown))
         return delta.total_seconds() > 0
 
-    async def send_gamewatch_ping(self, ctx: commands.Context, channel: discord.TextChannel):
+    async def send_gamewatch_ping(self, ctx: commands.Context, ping_channel: discord.TextChannel,
+                                  update_channel: discord.TextChannel):
         role = ctx.guild.get_role(self.role_id)
         if role:
-            await channel.send(f"{ctx.author.name} has pinged Gamewatch, {role.mention}")
+            lastmessageid = update_channel.last_message_id
+            if lastmessageid:
+                message = await update_channel.fetch_message(lastmessageid)
+                if message.author.bot and message.embeds:
+                    await ctx.reply(
+                        content=f"{ctx.author.name} has pinged Gamewatch, {role.mention}\n{message.jump_url}",
+                        embeds=message.embeds,
+                        mention_author=False
+                    )
+            else:
+                await ping_channel.send("No status message found!")
+
             self.last_gamewatch_ping = datetime.now(timezone.utc)
         else:
-            await channel.send("Gamewatch was pinged, but bot failed to find role!")
+            await ping_channel.send("Gamewatch was pinged, but bot failed to find role!")
 
     async def send_gamewatch_on_cooldown(self, ctx: commands.Context):
         delta = (self.last_gamewatch_ping + timedelta(seconds=self.ping_cooldown)) - ctx.message.created_at

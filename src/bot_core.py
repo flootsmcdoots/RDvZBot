@@ -73,11 +73,18 @@ def run_bot_core(bot_config):
         try:
             if update_channel:  # If not none, run other code
                 # Retrieve last message, if it's written by this bot, and it's an embed, let's edit it
+                # Otherwise post a new message and delete the other one if it's not an embed.
                 last_message_id = update_channel.last_message_id
                 if last_message_id:
                     last_message: discord.Message = await update_channel.fetch_message(last_message_id)
-                    if last_message.author == bot.user and last_message.embeds:
-                        await last_message.edit(embed=bot_response_handler.get_periodic_update(update_channel))
+                    if last_message.author == bot.user:
+                        if last_message.embeds:
+                            await last_message.edit(embed=bot_response_handler.get_periodic_update(update_channel))
+                        else:
+                            await last_message.delete()
+                            await update_channel.send(embed=bot_response_handler.get_periodic_update(channel=update_channel))
+                    else:
+                        await update_channel.send(embed=bot_response_handler.get_periodic_update(channel=update_channel))
                 else:
                     # Otherwise send a new message
                     await update_channel.send(embed=bot_response_handler.get_periodic_update(channel=update_channel))
@@ -114,14 +121,14 @@ def run_bot_core(bot_config):
                 return
             # Verify you pinged in the gamewatch role
             if gamewatch_pinger.can_ping_gamewatch(ctx.message.created_at):
-                await gamewatch_pinger.send_gamewatch_ping(ctx, ping_channel)
+                await gamewatch_pinger.send_gamewatch_ping(ctx, ping_channel, bot.get_channel(int(bot_updates_channel_id)))
             else:
                 # Print when you can ping gamewatch again
                 await gamewatch_pinger.send_gamewatch_on_cooldown(ctx)
         else:
             # Verify you pinged in the gamewatch role
             if gamewatch_pinger.can_ping_gamewatch(ctx.message.created_at):
-                await gamewatch_pinger.send_gamewatch_ping(ctx, ctx.channel)
+                await gamewatch_pinger.send_gamewatch_ping(ctx, ctx.channel, bot.get_channel(int(bot_updates_channel_id)))
             else:
                 # Print when you can ping gamewatch again
                 await gamewatch_pinger.send_gamewatch_on_cooldown(ctx)
