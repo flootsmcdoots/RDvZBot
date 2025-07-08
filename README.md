@@ -1,2 +1,2 @@
-# NightfallBot
-A bot to run on the Nightfall Server
+# RDvZBot
+A bot to run on the Retro DvZ Server
